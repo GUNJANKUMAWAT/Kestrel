@@ -1,0 +1,20 @@
+{"question_id": "eval-001", "type": "single-hop", "question": "How often are Beacons evaluated and what notification destinations are supported in spec-beacons v4.1?", "expected_verdict": "supported"}
+{"question_id": "eval-002", "type": "single-hop", "question": "What are the Beacon limits on Starter, Growth, and Scale projects?", "expected_verdict": "supported"}
+{"question_id": "eval-003", "type": "single-hop", "question": "What is the Event Ingestion API v2 request contract and its rate limits by plan?", "expected_verdict": "supported"}
+{"question_id": "eval-004", "type": "single-hop", "question": "What happens when an API request exceeds the ingest rate limit?", "expected_verdict": "supported"}
+{"question_id": "eval-005", "type": "single-hop", "question": "How does the JavaScript SDK flush and batch events?", "expected_verdict": "supported"}
+{"question_id": "eval-006", "type": "single-hop", "question": "What is the Trails retention window for Growth and Scale?", "expected_verdict": "supported"}
+{"question_id": "eval-007", "type": "multi-hop", "question": "Which plans support Warehouse Sync and which destinations are available by plan?", "expected_verdict": "supported"}
+{"question_id": "eval-008", "type": "multi-hop", "question": "What caused the 2025-11 duplicate Warehouse Sync incident and how was it fixed?", "expected_verdict": "supported"}
+{"question_id": "eval-009", "type": "multi-hop", "question": "How do late or backdated events interact with cohort recomputation and Trails?", "expected_verdict": "supported"}
+{"question_id": "eval-010", "type": "conflicting-evidence", "question": "What is the maximum number of properties supported in a funnel breakdown and when was it changed?", "expected_verdict": "supported"}
+{"question_id": "eval-011", "type": "unsupported", "question": "What is the exact retention configuration for Kestrel Prime, the fictional enterprise product?", "expected_verdict": "insufficient_evidence"}
+{"question_id": "eval-012", "type": "single-hop", "question": "What is the maximum number of steps in a funnel and what does the conversion window measure?", "expected_verdict": "supported"}
+{"question_id": "eval-013", "type": "single-hop", "question": "What are the row and timeout limits for KQL queries?", "expected_verdict": "supported"}
+{"question_id": "eval-014", "type": "multi-turn", "question": "How do you merge anonymous and known identities in the SDK?", "expected_verdict": "supported"}
+{"question_id": "eval-015", "type": "multi-turn-followup", "question": "What happens after alias(new_id, old_id) is called?", "expected_verdict": "supported"}
+{"question_id": "eval-016", "type": "unsupported", "question": "What is the maximum number of public API keys for the Starter plan?", "expected_verdict": "insufficient_evidence"}
+{"question_id": "eval-017", "type": "single-hop", "question": "What is the purpose of a behavioral cohort and how often is it recomputed?", "expected_verdict": "supported"}
+{"question_id": "eval-018", "type": "multi-hop", "question": "Which plan is required for Warehouse Sync, and what are the row limits for a single cohort sync?", "expected_verdict": "supported"}
+{"question_id": "eval-019", "type": "conflicting-evidence", "question": "What is the exact relationship between alerting evaluation cadence and the 2026-02-19 scheduler incident?", "expected_verdict": "supported"}
+{"question_id": "eval-020", "type": "multi-turn", "question": "What is a funnel?", "expected_verdict": "supported"}

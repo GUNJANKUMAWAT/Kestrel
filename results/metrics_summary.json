@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-09-19T19:45:20.534568",
+  "total_questions": 20,
+  "average_latency_sec": 17.924,
+  "verdict_distribution": {
+    "supported": 16,
+    "partially_supported": 2,
+    "insufficient_evidence": 2
+  },
+  "exact_match_rate": 0.9,
+  "langsmith_dataset": "kestrel-research-assistant-eval"
+}
