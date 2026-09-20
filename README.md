@@ -15,11 +15,14 @@ A grounded multi-agent research assistant for Kestrel product documentation. It 
 
    ```env
    GROQ_API_KEY=your_groq_api_key_here
+   GROQ_MODEL=qwen/qwen3.8-27b
    LANGCHAIN_TRACING_V2=true
    LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
    LANGCHAIN_API_KEY=your_langsmith_api_key_here
    LANGCHAIN_PROJECT=kestrel-research-assistant
    ```
+
+   Set `GROQ_MODEL` to a model that exists in your Groq account. If it is omitted, the app will try a small set of common models and degrade gracefully if the provider is unavailable or rate-limited.
 
 4. Build the vector database if needed:
 
@@ -38,6 +41,13 @@ streamlit run app.py
 ```bash
 python eval/run_eval.py
 ```
+
+## LangSmith evaluation
+
+- Dataset: [kestrel-research-assistant-eval](https://smith.langchain.com/o/da3c3f56-13b6-4ae3-b0ca-1a2ade82624f/datasets/040025c9-b9ef-4bb0-b13d-ba96f132cfe2?tab=1)
+- Tracing project: `Kestrel Research Agent`
+- The dataset contains 20 benchmark questions with expected verdicts.
+- LangSmith access may require signing in to the workspace that owns the dataset.
 
 ## Project structure
 
