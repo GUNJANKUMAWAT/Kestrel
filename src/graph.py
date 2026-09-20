@@ -28,14 +28,27 @@ def get_llm():
     if not api_key:
         raise ValueError("GROQ_API_KEY environment variable is missing!")
 
-    candidate_models = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
+    env_model = os.getenv("GROQ_MODEL")
+    candidate_models = []
+    if env_model:
+        candidate_models.append(env_model)
+
+    candidate_models.extend([
+        "qwen/qwen3.8-27b",
+        "groq/compound-mini",
+        "openai/gpt-oss-120b",
         "openai/gpt-oss-20b",
-    ]
+    ])
+
+    deduped_models = []
+    seen = set()
+    for model_name in candidate_models:
+        if model_name and model_name not in seen:
+            deduped_models.append(model_name)
+            seen.add(model_name)
 
     last_error = None
-    for model_name in candidate_models:
+    for model_name in deduped_models:
         try:
             llm = ChatGroq(
                 model_name=model_name,
@@ -46,16 +59,27 @@ def get_llm():
             return llm
         except Exception as exc:  # pragma: no cover
             last_error = exc
+            print(f"Warning: Groq model '{model_name}' failed. Trying next available model. Error: {type(exc).__name__}: {exc}")
             continue
 
     if last_error:
         print(f"Warning: all Groq models failed; using final fallback. Error: {last_error}")
 
     return ChatGroq(
-        model_name="llama-3.1-8b-instant",
+        model_name=deduped_models[0] if deduped_models else "qwen/qwen3.8-27b",
         temperature=0.0,
         groq_api_key=api_key,
     )
+
+
+def _safe_llm_response(prompt: str, *, stage: str, fallback: str = "I could not complete this step because the LLM service was unavailable.") -> str:
+    try:
+        llm = get_llm()
+        response = llm.invoke(prompt)
+        return response.content.strip()
+    except Exception as exc:  # pragma: no cover - environment-dependent path
+        print(f"Warning: LLM call failed during {stage}: {type(exc).__name__}: {exc}")
+        return fallback
 
 
 def _coalesce_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -166,9 +190,11 @@ JSON schema:
   "citations": ["chunk_id_1", "chunk_id_2"]
 }}"""
 
-    llm = get_llm()
-    res = llm.invoke(prompt)
-    raw = res.content.strip()
+    raw = _safe_llm_response(
+        prompt,
+        stage="verifier",
+        fallback='{"verdict": "insufficient_evidence", "reasoning": "The LLM provider was unavailable or rate-limited, so the answer could not be fully verified.", "citations": []}',
+    )
     cleaned = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
 
     try:
@@ -221,9 +247,11 @@ Evidence:
 
 Answer:"""
 
-    llm = get_llm()
-    res = llm.invoke(prompt)
-    answer = res.content.strip()
+    answer = _safe_llm_response(
+        prompt,
+        stage="synthesizer",
+        fallback="I could not generate a reliable final answer because the LLM service was unavailable or rate-limited.",
+    )
 
     return {"final_answer": answer, "agent_status": status}
 

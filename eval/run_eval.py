@@ -40,16 +40,26 @@ def _maybe_create_langsmith_dataset(questions: list[Dict[str, Any]]):
         client = Client()
         dataset_name = "kestrel-research-assistant-eval"
         try:
-            return client.read_dataset(dataset_name=dataset_name)
+            dataset = client.read_dataset(dataset_name=dataset_name)
         except Exception:
-            return client.create_dataset(
+            dataset = client.create_dataset(
                 dataset_name=dataset_name,
                 description="Kestrel research assistant benchmark questions",
-                data=[{
+            )
+
+        existing_examples = list(client.list_examples(dataset_id=dataset.id, limit=1))
+        if not existing_examples:
+            client.create_examples(
+                dataset_id=dataset.id,
+                examples=[{
                     "inputs": {"question": q.get("question", "")},
+                    "outputs": {"expected_verdict": q.get("expected_verdict", "unknown")},
                     "metadata": {"type": q.get("type", "unknown"), "id": q.get("id", "unknown")},
                 } for q in questions],
             )
+            print(f"Uploaded {len(questions)} examples to LangSmith dataset: {dataset_name}")
+
+        return dataset
     except Exception:
         return None
 
