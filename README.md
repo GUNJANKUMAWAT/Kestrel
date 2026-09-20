@@ -44,7 +44,7 @@ python eval/run_eval.py
 
 ## LangSmith evaluation
 
-- Dataset: [kestrel-research-assistant-eval](https://smith.langchain.com/o/da3c3f56-13b6-4ae3-b0ca-1a2ade82624f/datasets/040025c9-b9ef-4bb0-b13d-ba96f132cfe2?tab=1)
+- Public dataset: [kestrel-research-assistant-eval](https://smith.langchain.com/public/05d56625-3d0e-4acc-82dc-a76a13b47f5e/d)
 - Tracing project: `Kestrel Research Agent`
 - The dataset contains 20 benchmark questions with expected verdicts.
 - LangSmith access may require signing in to the workspace that owns the dataset.
