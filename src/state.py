@@ -8,5 +8,4 @@ class AgentState(TypedDict):
     verifier_verdict: str  # supported | partially_supported | conflicting_evidence | insufficient_evidence
     verifier_reasoning: str
     final_answer: str
-    citations: List[str]   # List of cited chunk_ids
-    agent_status: List[str] # Progress log for UI status indicators
+    citations: List[str]   # List of cited chunk_ids    citation_details: List[Dict[str, Any]]    agent_status: List[str] # Progress log for UI status indicators

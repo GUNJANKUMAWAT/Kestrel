@@ -1,12 +1,17 @@
 {
-  "timestamp": "2026-09-19T19:45:20.534568",
+  "timestamp": "2026-09-20T13:37:43.432002",
   "total_questions": 20,
-  "average_latency_sec": 17.924,
+  "average_latency_sec": 20.019,
   "verdict_distribution": {
-    "supported": 16,
-    "partially_supported": 2,
+    "supported": 15,
+    "partially_supported": 3,
     "insufficient_evidence": 2
   },
-  "exact_match_rate": 0.9,
+  "exact_match_rate": 0.85,
+  "retrieval_quality": 0.9,
+  "answer_faithfulness": 0.9,
+  "answer_relevance": 1.0,
+  "end_to_end_correctness": 0.85,
+  "llm_judge_score": 0.97,
   "langsmith_dataset": "kestrel-research-assistant-eval"
 }

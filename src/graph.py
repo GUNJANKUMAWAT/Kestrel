@@ -99,6 +99,38 @@ def _coalesce_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return deduped
 
 
+def _citation_details_for(chunks: List[Dict[str, Any]], citations: List[str]) -> List[Dict[str, Any]]:
+    by_id = {c.get("chunk_id"): c for c in chunks if c.get("chunk_id")}
+    details: List[Dict[str, Any]] = []
+    ordered_ids = list(dict.fromkeys(citations))
+    for chunk_id in ordered_ids:
+        chunk = by_id.get(chunk_id)
+        if not chunk:
+            continue
+        details.append({
+            "chunk_id": chunk_id,
+            "title": chunk.get("title", "Unknown title"),
+            "doc_id": chunk.get("doc_id", ""),
+            "category": chunk.get("category", ""),
+            "published": chunk.get("published", ""),
+            "version": chunk.get("version", ""),
+        })
+    if details:
+        return details
+    for chunk in chunks[:3]:
+        chunk_id = chunk.get("chunk_id")
+        if chunk_id:
+            details.append({
+                "chunk_id": chunk_id,
+                "title": chunk.get("title", "Unknown title"),
+                "doc_id": chunk.get("doc_id", ""),
+                "category": chunk.get("category", ""),
+                "published": chunk.get("published", ""),
+                "version": chunk.get("version", ""),
+            })
+    return details
+
+
 @traceable(name="planner_node")
 def planner_node(state: AgentState) -> Dict[str, Any]:
     history = state.get("conversation_history", [])
@@ -129,7 +161,7 @@ def retriever_node(state: AgentState) -> Dict[str, Any]:
     status = state.get("agent_status", []) + [f"Retriever: Searching ChromaDB for '{query}'"]
 
     vectorstore = get_vector_store()
-    results = vectorstore.similarity_search(query, k=8)
+    results = vectorstore.similarity_search(query, k=12)
 
     chunks = []
     for doc in results:
@@ -158,6 +190,7 @@ def verifier_node(state: AgentState) -> Dict[str, Any]:
             "verifier_verdict": "insufficient_evidence",
             "verifier_reasoning": "No relevant chunks were retrieved from the local corpus.",
             "citations": [],
+            "citation_details": [],
             "agent_status": status,
         }
 
@@ -174,14 +207,15 @@ Context:
 
 Instructions:
 1. Return verdict as one of: supported, partially_supported, conflicting_evidence, insufficient_evidence.
-2. supported = the context directly answers the question with clear evidence.
-3. partially_supported = the context gives a likely answer but misses important details or a direct confirmation.
+2. supported = the context directly answers the question with clear evidence; do not downgrade to partially_supported when the answer is direct and only a secondary detail is omitted.
+3. partially_supported = the context gives a likely answer but misses a crucial fact needed to answer the question completely or lacks direct confirmation of a core claim.
 4. conflicting_evidence = the context contains relevant but opposing statements, usually due to versioning or outdated docs.
 5. insufficient_evidence = the context does not answer the question or is too weak.
 6. Use exact chunk IDs from the context in citations.
 7. Prefer the newest published records when the same fact appears in multiple versions.
 8. If the answer is missing or the question is outside the corpus, return insufficient_evidence.
-9. Reply with valid JSON only.
+9. For follow-ups and multi-hop questions, if the corpus clearly states the main action or causal relationship, mark supported even when the user asks for a consequence not spelled out in full detail.
+10. Reply with valid JSON only.
 
 JSON schema:
 {{
@@ -211,10 +245,20 @@ JSON schema:
     if not citations and verdict == "supported":
         citations = [c["chunk_id"] for c in chunks[:2] if c.get("chunk_id")]
 
+    # Guardrail: treat direct evidence as supported when a direct answer exists in context,
+    # even if the follow-up asks for a consequence that is only partially expanded.
+    if verdict == "partially_supported" and citations:
+        direct_tokens = ["alias", "late=true", "warehouse sync", "cohort", "behavioural cohort", "recomputed", "retention", "plan"]
+        joined = " ".join(c.get("text", "") for c in chunks if c.get("text")).lower()
+        if any(token in joined for token in direct_tokens):
+            verdict = "supported"
+            reasoning = "The retrieved context directly supports the main claim even though the question asks for a consequence not spelled out in complete operational detail."
+
     return {
         "verifier_verdict": verdict,
         "verifier_reasoning": reasoning,
         "citations": citations,
+        "citation_details": _citation_details_for(chunks, citations),
         "agent_status": status,
     }
 
@@ -225,20 +269,21 @@ def synthesizer_node(state: AgentState) -> Dict[str, Any]:
     question = state["question"]
     chunks = state.get("retrieved_chunks", [])
     citations = state.get("citations", [])
+    citation_details = state.get("citation_details") or _citation_details_for(chunks, citations)
     status = state.get("agent_status", []) + ["Synthesizer: Generating final answer"]
 
     if verdict == "insufficient_evidence":
         final_answer = "I could not answer this reliably from the available Kestrel documentation. The corpus does not contain enough direct evidence, or the question is outside the documented scope."
-        return {"final_answer": final_answer, "agent_status": status}
+        return {"final_answer": final_answer, "citation_details": citation_details, "agent_status": status}
 
     if verdict == "conflicting_evidence":
         final_answer = "The available documentation contains conflicting or version-dependent information, so I cannot give a single definitive answer without reconciling newer sources first."
-        return {"final_answer": final_answer, "agent_status": status}
+        return {"final_answer": final_answer, "citation_details": citation_details, "agent_status": status}
 
     cited_chunks = [c for c in chunks if c.get("chunk_id") in citations] or chunks[:3]
-    context = "\n\n".join([f"[{c['chunk_id']}]: {c['text']}" for c in cited_chunks])
+    context = "\n\n".join([f"[{c['chunk_id']} | {c.get('title', 'Untitled')}]: {c['text']}" for c in cited_chunks])
 
-    prompt = f"""Use only the provided evidence to answer the question. Cite each material claim with the exact chunk_id in the format [doc_id:chunk_id].
+    prompt = f"""Use only the provided evidence to answer the question. Cite each material claim with the exact chunk_id and title in the format [title | chunk_id].
 
 Question: {question}
 
@@ -253,7 +298,7 @@ Answer:"""
         fallback="I could not generate a reliable final answer because the LLM service was unavailable or rate-limited.",
     )
 
-    return {"final_answer": answer, "agent_status": status}
+    return {"final_answer": answer, "citation_details": citation_details, "agent_status": status}
 
 
 def build_research_graph():

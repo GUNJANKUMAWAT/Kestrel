@@ -89,11 +89,20 @@ if prompt := st.chat_input("Ask a question about Kestrel documentation..."):
         final_answer = result.get("final_answer", "")
         st.markdown(final_answer)
 
+        citation_details = result.get("citation_details", [])
+        if citation_details:
+            st.markdown("### Citations")
+            for item in citation_details:
+                title = item.get("title", "Untitled document")
+                chunk_id = item.get("chunk_id", "unknown")
+                st.caption(f"- {title} | {chunk_id}")
+
         # Store Assistant Output
         st.session_state.messages.append({
             "role": "assistant",
             "content": final_answer,
-            "agent_status": result.get("agent_status", [])
+            "agent_status": result.get("agent_status", []),
+            "citations": citation_details,
         })
         
         # Track Multi-turn History
